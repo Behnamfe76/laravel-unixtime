@@ -1,11 +1,11 @@
 {
-    "name": "laravel/unixtime",
+    "name": "fereydooni/unixtime",
     "description": "a Laravel package that automatically adds UNIX timestamp equivalents",
     "type": "library",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Laravel\\Unixtime\\": "src/"
+            "Fereydooni\\Unixtime\\": "src/"
         }
     },
     "authors": [
@@ -14,5 +14,12 @@
             "email": "101217538+Behnamfe76@users.noreply.github.com"
         }
     ],
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Fereydooni\\Unixtime\\Providers\\TimestampEquivalentsServiceProvider"
+            ]
+        }
+    },
     "require": {}
 }
