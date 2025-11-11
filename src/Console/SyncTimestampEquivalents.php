@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Schema\Blueprint;
-use Fereydooni\Unixtime\Traits\HasTimestampEquivalents;
+use Fereydooni\Unixtime\HasTimestampEquivalents;
 use ReflectionClass;
 
 use function config;

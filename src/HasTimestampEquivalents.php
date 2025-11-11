@@ -1,6 +1,6 @@
 <?php
 
-namespace Fereydooni\Unixtime\Traits;
+namespace Fereydooni\Unixtime;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
