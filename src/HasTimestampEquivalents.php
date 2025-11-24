@@ -231,21 +231,31 @@ trait HasTimestampEquivalents
      */
     protected function hasTimestampColumn(string $column): bool
     {
-        static $cache = [];
+        $tableColumns = $this->getCachedTableColumns();
+        return in_array($column, $tableColumns, true);
+    }
 
+    /**
+     * Get cached table columns (unserialized).
+     *
+     * @return array
+     */
+    protected function getCachedTableColumns(): array
+    {
         $table = $this->getTable();
-        $cacheKey = $table . '.' . $column;
+        $connection = $this->getConnectionName();
+        $cacheKey = 'system.schema.' . $connection . '.' . $table . '.columns';
 
-        if (!isset($cache[$cacheKey])) {
+        $cached = cache()->remember($cacheKey, now()->addDays(7), function () use ($table, $connection) {
             try {
-                $cache[$cacheKey] = Schema::connection($this->getConnectionName())
-                    ->hasColumn($table, $column);
+            $columns = Schema::connection($connection)->getColumnListing($table);
+            return serialize($columns);
             } catch (\Exception $e) {
-                $cache[$cacheKey] = false;
+            return serialize([]);
             }
-        }
+        });
 
-        return $cache[$cacheKey];
+        return unserialize($cached);
     }
 
     /**
