@@ -194,36 +194,42 @@ trait HasTimestampEquivalents
      */
     protected function getDatetimeColumnsFromDatabase(): array
     {
-        $datetimeColumns = [];
         $table = $this->getTable();
-        $connection = $this->getConnectionName();
+        $connection = $this->getConnectionName() ?: config('database.default');
+        $cacheKey = 'system.schema.' . $connection . '.' . $table . '.datetime_columns';
 
-        try {
-            // Get column listing with types
-            $columns = Schema::connection($connection)->getColumns($table);
+        $cached = cache()->remember($cacheKey, now()->addDays(7), function () use ($table, $connection) {
+            $datetimeColumns = [];
 
-            foreach ($columns as $column) {
-                $columnName = $column['name'];
-                $columnType = strtolower($column['type_name'] ?? $column['type'] ?? '');
+            try {
+                // Get column listing with types
+                $columns = Schema::connection($connection)->getColumns($table);
 
-                // Check if this is a datetime-related column
-                if ($this->isDateTimeColumn($columnType)) {
-                    // Check if it's not already a Unix timestamp column
-                    if (!Str::endsWith($columnName, $this->getTimestampColumnSuffix())) {
-                        $datetimeColumns[] = $columnName;
+                foreach ($columns as $column) {
+                    $columnName = $column['name'];
+                    $columnType = strtolower($column['type_name'] ?? $column['type'] ?? '');
+
+                    // Check if this is a datetime-related column
+                    if ($this->isDateTimeColumn($columnType)) {
+                        // Check if it's not already a Unix timestamp column
+                        if (!Str::endsWith($columnName, $this->getTimestampColumnSuffix())) {
+                            $datetimeColumns[] = $columnName;
+                        }
                     }
                 }
+            } catch (\Exception $e) {
+                // If we can't query the database schema, fallback to casts
+                $datetimeColumns = $this->getDatetimeColumnsFromCasts();
             }
-        } catch (\Exception $e) {
-            // If we can't query the database schema, fallback to casts
-            $datetimeColumns = $this->getDatetimeColumnsFromCasts();
-        }
 
-        // Merge with casts to ensure we don't miss any
-        $castedColumns = $this->getDatetimeColumnsFromCasts();
-        $datetimeColumns = array_unique(array_merge($datetimeColumns, $castedColumns));
+            // Merge with casts to ensure we don't miss any
+            $castedColumns = $this->getDatetimeColumnsFromCasts();
+            $datetimeColumns = array_unique(array_merge($datetimeColumns, $castedColumns));
 
-        return $datetimeColumns;
+            return serialize($datetimeColumns);
+        });
+
+        return unserialize($cached);
     }
 
     /**
@@ -341,14 +347,14 @@ trait HasTimestampEquivalents
     }
 
     /**
-     * Get cached table columns (unserialized).
+     * Get cached table columns.
      *
      * @return array
      */
     protected function getCachedTableColumns(): array
     {
         $table = $this->getTable();
-        $connection = $this->getConnectionName();
+        $connection = $this->getConnectionName() ?: config('database.default');
         $cacheKey = 'system.schema.' . $connection . '.' . $table . '.columns';
 
         $cached = cache()->remember($cacheKey, now()->addDays(7), function () use ($table, $connection) {
