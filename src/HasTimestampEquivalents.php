@@ -4,7 +4,6 @@ namespace Fereydooni\Unixtime;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 trait HasTimestampEquivalents
@@ -34,6 +33,112 @@ trait HasTimestampEquivalents
             // Re-sync to ensure consistency
             $model->syncTimestampEquivalents(false);
         });
+    }
+
+    /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new class($query) extends \Illuminate\Database\Eloquent\Builder {
+            /**
+             * Add an "order by" clause to the query.
+             *
+             * @param  \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Query\Expression|string  $column
+             * @param  string  $direction
+             * @return $this
+             */
+            public function orderBy($column, $direction = 'asc')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $column = $this->convertToUnixTimestampColumn($column);
+                }
+
+                return parent::orderBy($column, $direction);
+            }
+
+            /**
+             * Add a descending "order by" clause to the query.
+             *
+             * @param  \Closure|\Illuminate\Database\Query\Builder|\Illuminate\Database\Query\Expression|string  $column
+             * @return $this
+             */
+            public function orderByDesc($column)
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $column = $this->convertToUnixTimestampColumn($column);
+                }
+
+                return parent::orderByDesc($column);
+            }
+
+            /**
+             * Add an "order by" clause for a timestamp to the query.
+             *
+             * @param  string  $column
+             * @return $this
+             */
+            public function latest($column = null)
+            {
+                $column = $column ?? $this->model->getCreatedAtColumn();
+
+                if (is_string($column) && $this->model) {
+                    $column = $this->convertToUnixTimestampColumn($column);
+                }
+
+                return parent::latest($column);
+            }
+
+            /**
+             * Add an "order by" clause for a timestamp to the query.
+             *
+             * @param  string  $column
+             * @return $this
+             */
+            public function oldest($column = null)
+            {
+                $column = $column ?? $this->model->getCreatedAtColumn();
+
+                if (is_string($column) && $this->model) {
+                    $column = $this->convertToUnixTimestampColumn($column);
+                }
+
+                return parent::oldest($column);
+            }
+
+            /**
+             * Convert datetime column to Unix timestamp column if applicable.
+             *
+             * @param  string  $column
+             * @return string
+             */
+            protected function convertToUnixTimestampColumn(string $column): string
+            {
+                // Check if this column has a Unix timestamp equivalent
+                if (method_exists($this->model, 'getTimestampEquivalentColumns')) {
+                    $datetimeColumns = array_diff(
+                        $this->model->getTimestampEquivalentColumns(),
+                        $this->model->getExcludedTimestampColumns()
+                    );
+
+                    if (in_array($column, $datetimeColumns, true)) {
+                        $unixColumn = $this->model->getTimestampEquivalentColumnName($column);
+
+                        // Verify the Unix column exists in the table
+                        if ($this->model->hasTimestampColumn($unixColumn)) {
+                            return $unixColumn;
+                        }
+                    }
+                }
+
+                return $column;
+            }
+        };
     }
 
     /**
@@ -229,7 +334,7 @@ trait HasTimestampEquivalents
      * @param string $column
      * @return bool
      */
-    protected function hasTimestampColumn(string $column): bool
+    public function hasTimestampColumn(string $column): bool
     {
         $tableColumns = $this->getCachedTableColumns();
         return in_array($column, $tableColumns, true);
@@ -248,10 +353,10 @@ trait HasTimestampEquivalents
 
         $cached = cache()->remember($cacheKey, now()->addDays(7), function () use ($table, $connection) {
             try {
-            $columns = Schema::connection($connection)->getColumnListing($table);
-            return serialize($columns);
+                $columns = Schema::connection($connection)->getColumnListing($table);
+                return serialize($columns);
             } catch (\Exception $e) {
-            return serialize([]);
+                return serialize([]);
             }
         });
 
