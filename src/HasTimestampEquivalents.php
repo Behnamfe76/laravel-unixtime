@@ -2,9 +2,10 @@
 
 namespace Fereydooni\Unixtime;
 
+use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Schema;
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 
 trait HasTimestampEquivalents
 {
@@ -43,7 +44,210 @@ trait HasTimestampEquivalents
      */
     public function newEloquentBuilder($query)
     {
-        return new class($query) extends \Illuminate\Database\Eloquent\Builder {
+        return new class($query) extends Builder {
+            /**
+             * Add a basic where clause to the query.
+             *
+             * @param  \Closure|string|array  $column
+             * @param  mixed  $operator
+             * @param  mixed  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function where($column, $operator = null, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::where($column, $operator, $value, $boolean);
+            }
+
+            /**
+             * Add a "where between" statement to the query.
+             *
+             * @param  \Illuminate\Contracts\Database\Query\Expression|string  $column
+             * @param  iterable  $values
+             * @param  string  $boolean
+             * @param  bool  $not
+             * @return $this
+             */
+            public function whereBetween($column, iterable $values, $boolean = 'and', $not = false)
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the values to timestamps
+                    if ($column !== $originalColumn) {
+                        $values = array_map(function ($value) {
+                            return $this->convertToUnixTimestamp($value);
+                        }, is_array($values) ? $values : iterator_to_array($values));
+                    }
+                }
+
+                return parent::whereBetween($column, $values, $boolean, $not);
+            }
+
+            /**
+             * Add a "where not between" statement to the query.
+             *
+             * @param  \Illuminate\Contracts\Database\Query\Expression|string  $column
+             * @param  iterable  $values
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereNotBetween($column, iterable $values, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the values to timestamps
+                    if ($column !== $originalColumn) {
+                        $values = array_map(function ($value) {
+                            return $this->convertToUnixTimestamp($value);
+                        }, is_array($values) ? $values : iterator_to_array($values));
+                    }
+                }
+
+                return parent::whereNotBetween($column, $values, $boolean);
+            }
+
+            /**
+             * Add a "where date" statement to the query.
+             *
+             * @param  string  $column
+             * @param  string  $operator
+             * @param  \DateTimeInterface|string|null  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereDate($column, $operator, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::whereDate($column, $operator, $value, $boolean);
+            }
+
+            /**
+             * Add a "where time" statement to the query.
+             *
+             * @param  string  $column
+             * @param  string  $operator
+             * @param  \DateTimeInterface|string|null  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereTime($column, $operator, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::whereTime($column, $operator, $value, $boolean);
+            }
+
+            /**
+             * Add a "where day" statement to the query.
+             *
+             * @param  string  $column
+             * @param  string  $operator
+             * @param  \DateTimeInterface|string|int|null  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereDay($column, $operator, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::whereDay($column, $operator, $value, $boolean);
+            }
+
+            /**
+             * Add a "where month" statement to the query.
+             *
+             * @param  string  $column
+             * @param  string  $operator
+             * @param  \DateTimeInterface|string|int|null  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereMonth($column, $operator, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::whereMonth($column, $operator, $value, $boolean);
+            }
+
+            /**
+             * Add a "where year" statement to the query.
+             *
+             * @param  string  $column
+             * @param  string  $operator
+             * @param  \DateTimeInterface|string|int|null  $value
+             * @param  string  $boolean
+             * @return $this
+             */
+            public function whereYear($column, $operator, $value = null, $boolean = 'and')
+            {
+                // Only process if it's a simple column name string
+                if (is_string($column) && $this->model) {
+                    $originalColumn = $column;
+                    $column = $this->convertToUnixTimestampColumn($column);
+
+                    // If column was converted, also convert the value to timestamp
+                    if ($column !== $originalColumn && $value !== null) {
+                        $value = $this->convertToUnixTimestamp($value);
+                    }
+                }
+
+                return parent::whereYear($column, $operator, $value, $boolean);
+            }
+
             /**
              * Add an "order by" clause to the query.
              *
@@ -137,6 +341,42 @@ trait HasTimestampEquivalents
                 }
 
                 return $column;
+            }
+
+            /**
+             * Convert a datetime value to Unix timestamp.
+             *
+             * @param  mixed  $value
+             * @return int|null
+             */
+            protected function convertToUnixTimestamp($value)
+            {
+                // If already a timestamp (integer), return as is
+                if (is_int($value)) {
+                    return $value;
+                }
+
+                // If null, return null
+                if ($value === null) {
+                    return null;
+                }
+
+                try {
+                    // If it's a Carbon instance or DateTime, get timestamp
+                    if ($value instanceof \DateTimeInterface) {
+                        return $value->getTimestamp();
+                    }
+
+                    // If it's a string, parse it to Carbon and get timestamp
+                    if (is_string($value)) {
+                        return \Carbon\Carbon::parse($value)->timestamp;
+                    }
+                } catch (\Exception $e) {
+                    // If parsing fails, return the value as is
+                    return $value;
+                }
+
+                return $value;
             }
         };
     }
